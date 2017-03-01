@@ -7,6 +7,8 @@ local tableUtils = require("utils.tableUtils")
 
 local hexagons = require("lib.hexagons")
 
+local _player = require("lib.player")
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -30,11 +32,18 @@ local bg
 --graphic: contains boundings
 local guides
 
+--contains gui elements
+local gui
+
 --graphic: contains tiles
-local handTiles
+local player1_handTiles
+local player2_handTiles
+
+local player1, player2
 
 local turn = 0
-local turnTime = {current = 0, max = 5}
+local turnTime = {current = 0, max = 120}
+local who_plays = nil
 
 local game_end = false
 
@@ -75,7 +84,7 @@ end
 local function dragTile(event)
   local phase = event.phase
   local tile = event.target
-  if(not tile.slot) then
+  if(not tile.slot and tile.owner.name == who_plays) then
     if (phase=="began") then
       display.currentStage:setFocus( tile )
       -- Store initial offset position
@@ -118,12 +127,9 @@ local function dragTile(event)
 end
 
 
-
-
-
 local function gameLoop()
     turnTime.current = turnTime.current +1
-    print("turn "..turn.." "..turnTime.current.." sec")
+    --print("turn "..turn.." "..turnTime.current.." sec")
     if (turnTime.current >= turnTime.max) then
     	print("end turn "..turn)
     	timer.cancel(gameLoopTimer)
@@ -133,7 +139,14 @@ end
 
 function nextTurn()
 	turn = turn + 1
-	print("new turn")
+	if (turn % 2 ~= 0) then
+		--player 1 turn
+		who_plays = player1.name
+	else
+		--player 2 turn
+		who_plays = player2.name
+	end
+	print(who_plays.."'s new turn")
 
 	--example end game, replace with end-game condition
     if turn > 10 then game_end = true end
@@ -168,12 +181,14 @@ function scene:create( event )
 	--contains boundings
 	guides = display.newGroup( )
 	sceneGroup:insert( guides )
-	--contains tiles
-	handTiles = display.newGroup( )
-	sceneGroup:insert( handTiles )
 	--contains gui elements
 	gui = display.newGroup( )
 	sceneGroup:insert( gui )
+	--contains tiles
+	player1_handTiles = display.newGroup( )
+	sceneGroup:insert( player1_handTiles )
+	player2_handTiles = display.newGroup( )
+	sceneGroup:insert( player2_handTiles )
 
 	local hive = display.newImage( bg, "resources/images/hive.png" , 640, 694 )
 	hive.x = display.contentCenterX
@@ -231,19 +246,29 @@ function scene:create( event )
 	skip.y = display.contentCenterY + (hexSizes.diagonal+hexSizes.side)
 	skip:addEventListener( "tap", skipTurn )
 
-	--example deck
-	local loadedDeck = {"magic", "alchemy", "vigor", "shell"}
+	--example decks
+	local loadedDeck1 = {"magic", "alchemy", "vigor", "shell"}
+	local loadedDeck2 = {"magic", "alchemy", "vigor", "shell"}
 	--generate player
-	local _player = require("lib.player")
-	local player1 = _player.new("Salvo", loadedDeck)
-	player1.shuffleDeck()
-	print(player1.name.." is playing")
+	player1 = _player.new("Salvo", loadedDeck)
+	player2 = _player.new("Bob", loadedDeck)
 
-	local newCard1
+	player1.shuffleDeck()
+	player2.shuffleDeck()
+
+	print(player1.name.." is playing")
+	print(player2.name.." is playing")
+
+	local newCard
 
 	for i=0, 3, 1 do
-	  newCard1 = player1.addCardToHand()
-	  if (newCard1) then table.insert( tilesTable, newCard1 ) end
+	  newCard = player1.addCardToHand()
+	  if (newCard) then table.insert( tilesTable, newCard ) end
+	end
+
+	for i=0, 3, 1 do
+	  newCard = player2.addCardToHand()
+	  if (newCard) then table.insert( tilesTable, newCard ) end
 	end
 
 end
@@ -258,13 +283,23 @@ function scene:show( event )
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
-		--move tiles to bottom bar and add touch event
+		--player hand counters
+		local p1, p2 = 1,1
+		--move tiles to bottom bar and add touch event. then draw them on right player hand
 		for i, v in ipairs(tilesTable) do
-		  --move this to player
-		  handTiles:insert(v)
-		  v.x = 150*i
+		  --move this to the right player hand
+		  if (v.owner.name == player1.name) then
+			player1_handTiles:insert(v)
+			v.x = (display.contentWidth / 5)*p1
+			p1 = p1 + 1
+			v.y = display.contentHeight - 20
+		  else
+			player2_handTiles:insert(v)
+			v.x = (display.contentWidth / 5)*p2
+			p2 = p2+1
+			v.y = 20
+		  end
 		  v.barX = v.x
-		  v.y = display.contentHeight - 20
 		  v.barY = v.y
 		  v:scale(1.08,1.08)
 		  v:addEventListener( "touch", dragTile )

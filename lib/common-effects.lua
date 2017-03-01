@@ -7,6 +7,10 @@ function M.new()
 		return "destroy "..target
 	end
 
+	_effects.die = function(target)
+		return target.." is now dead"
+	end
+
 	_effects.dealDamage = function(source, target, amount)
 		return source.." deals "..amount.." damages to "..target
 	end

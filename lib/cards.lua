@@ -10,7 +10,7 @@ function M.new()
 			path="/resources/images/tiles/magic.png", 
 			name="Magic", 
 			filter="blue",
-			onActivate=commonEffects.destroy
+			onActivate=commonEffects.die
 		},
 		alchemy={
 			path="/resources/images/tiles/alchemy.png", 

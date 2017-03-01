@@ -50,6 +50,7 @@ function M.new(card,owner)
 		end
 
 		tileObj.onDeath = cards[card].onDeath or function()
+			tileObj.owner.sendToGrave(tileObj)
 			return tileObj.name.." is now dead"
 		end
 
@@ -83,8 +84,9 @@ function M.new(card,owner)
 
 		function tileObj.onActivate()
 			--do magic here
-			if (tileObj.placed) then
+			if (tileObj.slot) then
 				tileObj._onActivate("source", "target", "option")
+				return true
 			else
 				return false
 			end

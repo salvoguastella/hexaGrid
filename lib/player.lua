@@ -10,6 +10,7 @@ function M.new(name,loadedDeck)
 		table.insert( _player.deck, newTile )
 	end
 	_player.hand = {}
+	_player.grave = {}
 	_player.name = name
 
 	_player.addCardToHand = function()
@@ -48,6 +49,12 @@ function M.new(name,loadedDeck)
 			end
 		end
 		print("hand: "..#_player.hand)
+	end
+
+	_player.sendToGrave = function(tile)
+		tile.owner = _player.name
+		table.insert( _player.grave, tile )
+		print("grave: "..#_player.grave)
 	end
 
 	return _player
