@@ -27,6 +27,7 @@ function M.new(card,owner)
 		--properties
 		tileObj.name = cards[card].name or "no name"
 		tileObj.slot = nil
+		--tileObj.id ?
 		tileObj.owner = owner or "none"
 		tileObj.cost = cards[card].cost or 1
 		tileObj.category = cards[card].category or "generic"

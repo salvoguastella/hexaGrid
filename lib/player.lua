@@ -2,9 +2,7 @@ local M = {}
 
 local _tile = require("lib.tile")
 
-local loadedDeck = {"magic", "alchemy", "vigor", "shell"}
-
-function M.new(name)
+function M.new(name,loadedDeck)
 	local _player = {}
 	_player.deck = {}
 	for i, v in ipairs(loadedDeck) do
@@ -30,8 +28,19 @@ function M.new(name)
 		end
 	end
 
+	_player.shuffleDeck = function ()
+		    local rand = math.random
+		    assert( _player.deck, "shuffleTable() expected a table, got nil" )
+		    local iterations = #_player.deck
+		    local j
+		    for i = iterations, 2, -1 do
+		        j = rand(i)
+		        _player.deck[i], _player.deck[j] = _player.deck[j], _player.deck[i]
+		    end
+	end
+
 	_player.playCard = function(tile)
-		
+
 		for i, v in ipairs(_player.hand) do
 			if (tile == v) then
 				table.remove( _player.hand, i )
