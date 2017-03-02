@@ -39,10 +39,10 @@ function M.new(card,owner)
 		tileObj.baseHealth = cards[card].baseHealth or "10"
 		tileObj.buffedHealth = cards[card].baseHealth or "10"
 		tileObj.currentHealth = cards[card].baseHealth or "10"
-		tileObj.basePower = cards[card].baseHealth or "5"
-		tileObj.buffedPower = cards[card].baseHealth or "5"
-		tileObj.currentPower = cards[card].baseHealth or "5"
-		tileObj.description = cards[card].baseHealth or "no description"
+		tileObj.basePower = cards[card].basePower or "5"
+		tileObj.buffedPower = cards[card].basePower or "5"
+		tileObj.currentPower = cards[card].basePower or "5"
+		tileObj.description = cards[card].description or "no description"
 		tileObj.status = cards[card].status or { canAttack = true, taunt = false, stealth = false, immune = false, poisoned = false, burned = false, frozen = false, asleep = false, silenced = false }
 
 		--parameters indicators

@@ -10,6 +10,7 @@ function M.new()
 			path="/resources/images/tiles/magic.png", 
 			name="Magic", 
 			filter="blue",
+			baseHealth=3,
 			onActivate=commonEffects.die
 		},
 		alchemy={
