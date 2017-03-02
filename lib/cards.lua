@@ -27,6 +27,11 @@ function M.new()
 			path="/resources/images/tiles/magic.png", 
 			name="Shell", 
 			filter="red"
+		},
+		shield={
+			path="/resources/images/tiles/shield.png", 
+			name="Shield", 
+			filter="yellow"
 		}
 	}
 
