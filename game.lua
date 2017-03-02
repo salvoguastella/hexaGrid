@@ -26,29 +26,35 @@ local playedTiles = {}
 --data: stores tiles on the board. index = physical position
 local board = {}
 
+--contains gui elements behind board
+local lower_gui
+--contains timer behind board
+local timerGroup
+
 --graphic: contains main grid
 local bg
 
 --graphic: contains boundings
 local guides
 
---contains gui elements
-local gui
-
 --graphic: contains tiles
 local player1_handTiles
 local player2_handTiles
+local boardTiles
 
 local player1, player2
 
 local turn = 0
-local turnTime = {current = 0, max = 120}
+local turnTime = {current = 0, max = 20}
+--time between turns
+local infraTurnTime = 1000
 local who_plays = nil
+local skip, timerBox, timerText
 
 local game_end = false
 
 --example deck
-local loadedDeck = {"magic", "alchemy", "vigor", "shell"}
+local loadedDeck = {"magic", "alchemy", "vigor", "shell", "shield"}
 
 --checks if one tile has been moved on a bounding area. values are related to screen center
 local function isOnBounding( _bounding,x,y )
@@ -108,6 +114,12 @@ local function dragTile(event)
             table.insert( playedTiles, tile )
             local owner = tile.owner
             owner.playCard(tile)
+            if(owner.name == player1.name) then
+            	player1_handTiles:remove(tile)
+            else
+				player2_handTiles:remove(tile)
+            end
+            boardTiles:insert(tile)
             --print("test status. Asleep? "..tostring(tile.status.asleep))
             --print("test method. "..tile.onDamageDealt("dummy"))
             print( tableUtils.tostring(hexagons:getNodes(tile.slot)) )
@@ -129,11 +141,17 @@ end
 
 local function gameLoop()
     turnTime.current = turnTime.current +1
+    local deltaTime = turnTime.max - turnTime.current + 1
+    if (math.abs(deltaTime)>turnTime.max or deltaTime<0) then
+		timerText.text = ""
+    else
+    	timerText.text = deltaTime
+    end
     --print("turn "..turn.." "..turnTime.current.." sec")
-    if (turnTime.current >= turnTime.max) then
+    if (turnTime.current > turnTime.max + 1) then
     	print("end turn "..turn)
     	timer.cancel(gameLoopTimer)
-    	nextTurn()
+    	timer.performWithDelay( infraTurnTime, nextTurn, 1 )
     end
 end
 
@@ -142,9 +160,17 @@ function nextTurn()
 	if (turn % 2 ~= 0) then
 		--player 1 turn
 		who_plays = player1.name
+		transition.to( skip, {y = skip.y1, duration = 200} )
+		transition.to( timerGroup, {y = skip.y1, duration = 200} )
+		transition.to( player1_handTiles, {y = -50, duration = 200} )
+		transition.to( player2_handTiles, {y = 0, duration = 200} )
 	else
 		--player 2 turn
 		who_plays = player2.name
+		transition.to( skip, {y = skip.y2, duration = 200} )
+		transition.to( timerGroup, {y = skip.y2, duration = 200} )
+		transition.to( player1_handTiles, {y = 0, duration = 200} )
+		transition.to( player2_handTiles, {y = 50, duration = 200} )
 	end
 	print(who_plays.."'s new turn")
 
@@ -161,7 +187,10 @@ function nextTurn()
 end
 
 local function skipTurn()
-	turnTime.current = 999
+	timerText.text = ""
+ 	print("end turn "..turn)
+	timer.cancel(gameLoopTimer)
+	timer.performWithDelay( infraTurnTime, nextTurn, 1 )
 end
 
 
@@ -175,20 +204,25 @@ function scene:create( event )
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
+	--contains gui elements behind board
+	lower_gui = display.newGroup( )
+	sceneGroup:insert( lower_gui )
+	--timer component
+	timerGroup = display.newGroup( )
+	lower_gui:insert( timerGroup )
 	--contains main grid
 	bg = display.newGroup( )
 	sceneGroup:insert( bg )
 	--contains boundings
 	guides = display.newGroup( )
 	sceneGroup:insert( guides )
-	--contains gui elements
-	gui = display.newGroup( )
-	sceneGroup:insert( gui )
 	--contains tiles
 	player1_handTiles = display.newGroup( )
 	sceneGroup:insert( player1_handTiles )
 	player2_handTiles = display.newGroup( )
 	sceneGroup:insert( player2_handTiles )
+	boardTiles = display.newGroup( )
+	sceneGroup:insert( boardTiles )
 
 	local hive = display.newImage( bg, "resources/images/hive.png" , 640, 694 )
 	hive.x = display.contentCenterX
@@ -241,10 +275,26 @@ function scene:create( event )
 	end
 
 	--temporary skip turn button
-	local skip = display.newImage( gui, "resources/images/tiles/skip.png" , 128, 147 )
+	skip = display.newImage( lower_gui, "resources/images/tiles/skip.png" , 128, 147 )
 	skip.x = display.contentCenterX + 2*hexSizes.width
-	skip.y = display.contentCenterY + (hexSizes.diagonal+hexSizes.side)
+	skip.y = display.contentCenterY
+	skip.y1 = display.contentCenterY + (hexSizes.diagonal+hexSizes.side)
+	skip.y2 = display.contentCenterY - (hexSizes.diagonal+hexSizes.side)
 	skip:addEventListener( "tap", skipTurn )
+
+	--timer component
+	timerBox = display.newImage( timerGroup, "resources/images/tiles/timer.png" , 128, 147 )
+	timerBox.x, timerBox.y = 0,0
+
+	timerText = display.newText( {parent=timerGroup, text="", font=native.systemFontBold, fontSize=48} )
+	timerText.x, timerText.y = 0,0
+
+	timerGroup.x = display.contentCenterX - 2*hexSizes.width
+	timerGroup.y = display.contentCenterY
+	timerGroup.y1 = display.contentCenterY + (hexSizes.diagonal+hexSizes.side)
+	timerGroup.y2 = display.contentCenterY - (hexSizes.diagonal+hexSizes.side)
+
+	lower_gui:insert(timerGroup)
 
 	--example decks
 	local loadedDeck1 = {"magic", "alchemy", "vigor", "shell"}
@@ -292,12 +342,12 @@ function scene:show( event )
 			player1_handTiles:insert(v)
 			v.x = (display.contentWidth / 5)*p1
 			p1 = p1 + 1
-			v.y = display.contentHeight - 20
+			v.y = display.contentHeight - 20 + 50
 		  else
 			player2_handTiles:insert(v)
 			v.x = (display.contentWidth / 5)*p2
-			p2 = p2+1
-			v.y = 20
+			p2 = p2 + 1
+			v.y = 20 - 50
 		  end
 		  v.barX = v.x
 		  v.barY = v.y

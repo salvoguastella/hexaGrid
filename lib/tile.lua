@@ -17,12 +17,17 @@ function M.new(card,owner)
 	    paint1 = { type="image", filename=path },
 	    paint2 = { type="image", filename=filters[filter].path }
 		}
-		local tileObj = display.newRect( 0, 0, tileW, tileH )
-		tileObj.fill = paint
-		tileObj.fill.effect = "composite.multiply"
+		local tileObj = display.newGroup( )
 		--place deck tile outside the viewport
 		tileObj.x = display.contentWidth + 100
 		tileObj.y = display.contentHeight - 20
+
+		local tileBg = display.newRect( 0, 0, tileW, tileH )
+		tileBg.fill = paint
+		tileBg.fill.effect = "composite.multiply"
+		tileBg.x = 0
+		tileBg.y = 0
+		tileObj:insert( tileBg )
 
 		--properties
 		tileObj.name = cards[card].name or "no name"
@@ -39,6 +44,27 @@ function M.new(card,owner)
 		tileObj.currentPower = cards[card].baseHealth or "5"
 		tileObj.description = cards[card].baseHealth or "no description"
 		tileObj.status = cards[card].status or { canAttack = true, taunt = false, stealth = false, immune = false, poisoned = false, burned = false, frozen = false, asleep = false, silenced = false }
+
+		--parameters indicators
+		local tileHealth = display.newCircle( -20,40,18 )
+		tileHealth:setFillColor( 1,1,1 )
+		tileHealth.strokeWidth = 4
+		tileHealth:setStrokeColor( 0, 0, 0 )
+		tileObj:insert( tileHealth )
+
+		local tileHealthText = display.newText( {parent=tileObj, text=tileObj.currentHealth, font=native.systemFontBold, fontSize=24} )
+		tileHealthText.x, tileHealthText.y = -20,40
+		tileHealthText:setFillColor( 0,0,0 )
+
+		local tilePower = display.newCircle( 20,40,18 )
+		tilePower:setFillColor( 1,1,1 )
+		tilePower.strokeWidth = 4
+		tilePower:setStrokeColor( 0, 0, 0 )
+		tileObj:insert( tilePower )
+
+		local tilePowerText = display.newText( {parent=tileObj, text=tileObj.currentPower, font=native.systemFontBold, fontSize=24} )
+		tilePowerText.x, tilePowerText.y = 20,40
+		tilePowerText:setFillColor( 0,0,0 )
 
 		--methods
 		tileObj.onDamageDealt = cards[card].onDamageDealt or function(target)
