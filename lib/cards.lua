@@ -33,6 +33,11 @@ function M.new()
 			path="/resources/images/tiles/shield.png", 
 			name="Shield", 
 			filter="yellow"
+		},
+		turtle={
+			path="/resources/images/tiles/shield.png", 
+			name="Turtle", 
+			filter="blue"
 		}
 	}
 

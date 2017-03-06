@@ -57,6 +57,13 @@ function M.new(name,loadedDeck)
 		print("grave: "..#_player.grave)
 	end
 
+	_player.burnCard = function ()
+		local wastedTile = _player.hand[#_player.hand]
+		table.remove( _player.hand, #_player.hand )
+		print(_player.name.." hand is too full. "..wastedTile.name.." has been discarted")
+		_player.sendToGrave(wastedTile)
+	end
+
 	return _player
 
 end
