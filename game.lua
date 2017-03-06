@@ -138,8 +138,9 @@ local function dragTile(event)
       -- Release touch focus on the ship
       local foundPosition = false
       for i, _bounding in ipairs(boundings) do
+        --checks is element position is overing an empty bounding
         local newX, newY = isOnBounding(_bounding,tile.x,tile.y)
-        if (newX and newY) then
+        if (newX and newY and not(board[_bounding.index])) then
           foundPosition = true
           transition.to( tile, { x=newX, y=newY, time=100, onComplete = function()
             tile.slot = _bounding.index
