@@ -31,7 +31,7 @@ local timerGroup
 --graphic: contains main grid
 local bg
 
---graphic: contains boundings
+--graphic: contains boundings and generic guides
 local guides
 
 --graphic: contains tiles
@@ -44,13 +44,17 @@ local player2_handTiles
 local player1, player2
 
 local turn = 0
-local turnTime = {current = 0, max = 20}
+local turnTime = {current = 0, max = 5}
 --time between turns
 local infraTurnTime = 1000
 local who_plays = nil
 local skip, timerBox, timerText
 local turn_change = false
 local max_hand_cards = 6
+--keeps track of what tile is being dragged and reset its position when turn ends and no new position has been set
+local draggedTile = nil
+--graphical tile selector during drag
+local tileSelector
 
 local game_end = false
 
@@ -105,18 +109,14 @@ local function rearrangePlayerHand(player)
 	end
 	for i,v in ipairs(hand) do
 		if v then
-	  		--v:removeEventListener( "touch", dragTile )
 			graphicDeck:remove( v )
 			graphicHand:insert(v)
-			--v.x = (display.contentWidth / 5)*i
 			transition.to( v, { x=(display.contentWidth / (max_hand_cards + 1))*i, time=400, onComplete = function()
             	--
         	end} )
 			v.y = graphicDeck.deckY
 			v.barX = (display.contentWidth / (max_hand_cards + 1))*i
 	  		v.barY = v.y
-	  		--v:scale(1.08,1.08)
-	  		--v:addEventListener( "touch", dragTile )
 		end
 	end
 end
@@ -127,15 +127,26 @@ local function dragTile(event)
   if(not tile.slot and tile.owner.name == who_plays) then
     if (phase=="began") then
       display.currentStage:setFocus( tile )
+      draggedTile = tile
       -- Store initial offset position
       tile.touchOffsetX = event.x - tile.x
       tile.touchOffsetY = event.y - tile.y
+      tileSelector = display.newImage( lower_gui, "resources/images/tiles/selector.png" , 128, 147 )
+	  tileSelector:scale(1.20,1.20)
+	  tileSelector.x, tileSelector.y = tile.x, tile.y
+	  guides:insert(tileSelector)
+
     elseif (phase=="moved") then
       -- Move the tile to the new touch position, cancel if turn ends
       tile.x = event.x - tile.touchOffsetX
       tile.y = event.y - tile.touchOffsetY
+      tileSelector.x = tile.x
+      tileSelector.y = tile.y
     elseif (phase=="ended" or phase=="cancelled") then
       -- Release touch focus on the ship
+      guides:remove(tileSelector)
+      tileSelector = nil
+      --tileSelector.remove()
       local foundPosition = false
       for i, _bounding in ipairs(boundings) do
         --checks is element position is overing an empty bounding
@@ -211,6 +222,19 @@ local function gameLoop()
     if (turnTime.current > turnTime.max + 1) then
     	print("end turn "..turn)
     	timer.cancel(gameLoopTimer)
+    	if tileSelector then
+    		guides:remove(tileSelector)
+    		tileSelector = nil
+    	end
+    	if draggedTile then
+	    	if (not draggedTile.slot) then
+		        transition.to( draggedTile, { x=draggedTile.barX, y=draggedTile.barY, time=100, onComplete = function()
+		            print("position resetted")
+		            draggedTile = nil
+		            display.currentStage:setFocus( nil )
+		        end} )
+	    	end
+    	end
     	timer.performWithDelay( infraTurnTime, nextTurn, 1 )
     end
 end

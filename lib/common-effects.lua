@@ -8,6 +8,7 @@ function M.new()
 	end
 
 	_effects.die = function(target)
+		print(target.." is now dead")
 		return target.." is now dead"
 	end
 
