@@ -53,6 +53,8 @@ local turn_change = false
 local max_hand_cards = 6
 --keeps track of what tile is being dragged and reset its position when turn ends and no new position has been set
 local draggedTile = nil
+--keeps track of what tile is held
+local holding = nil
 --graphical tile selector during drag
 local tileSelector
 
@@ -121,6 +123,45 @@ local function rearrangePlayerHand(player)
 	end
 end
 
+local function showTileOptions(tile)
+	if (holding) then
+		if tile then
+		    print(tile.name)
+    	end
+		print("menu")
+	else
+		print("hold cancelled")
+	end
+end
+
+--[[
+local function holdTile(event)
+  local phase = event.phase
+  local tile = event.target
+    if (phase=="began") then
+      holding = true
+      timer.performWithDelay( 1000, showTileOptions(tile), 1 )
+      -- Store initial offset position
+      tile.touchStartX = event.x
+      tile.touchStartY = event.y
+
+    elseif (phase=="moved") and holding then
+      -- Move the tile to the new touch position, cancel if turn ends
+      --cancel hold if moving too much
+      	if (tile) then
+	      if (math.abs(tile.touchStartX - tile.x) > 10 or math.abs(tile.touchStartY - tile.y) > 10) then
+	      	holding = nil
+	      	print("held nil")
+	  	  end
+  		end
+    elseif (phase=="ended" or phase=="cancelled") then
+       --display.currentStage:setFocus( nil )
+    end
+  return true
+
+end
+]]--
+
 local function dragTile(event)
   local phase = event.phase
   local tile = event.target
@@ -136,12 +177,14 @@ local function dragTile(event)
 	  tileSelector.x, tileSelector.y = tile.x, tile.y
 	  guides:insert(tileSelector)
 
-    elseif (phase=="moved") then
+    elseif (phase=="moved") and draggedTile and not holding then
       -- Move the tile to the new touch position, cancel if turn ends
       tile.x = event.x - tile.touchOffsetX
       tile.y = event.y - tile.touchOffsetY
-      tileSelector.x = tile.x
-      tileSelector.y = tile.y
+      if tileSelector then
+	      tileSelector.x = tile.x
+	      tileSelector.y = tile.y
+  	  end
     elseif (phase=="ended" or phase=="cancelled") then
       -- Release touch focus on the ship
       guides:remove(tileSelector)
@@ -205,6 +248,7 @@ local function renderPlayerDeck(player)
 	  		--v.barY = v.y
 	  		v:scale(1.08,1.08)
 	  		v:addEventListener( "touch", dragTile )
+	  		--v:addEventListener( "touch", holdTile )
 			graphicDeck:insert(v)
 		end
 	end
@@ -285,7 +329,7 @@ function nextTurn()
 end
 
 local function skipTurn()
-	if (not turn_change) then
+	if (not turn_change and not game_end) then
 		turn_change = true
 		timerText.text = ""
 	 	print("end turn "..turn)

@@ -1,9 +1,7 @@
 to do:
 
-bounding to class
-card holder
+touch hold - tap shows menu
 
-image bg
-image hive
-increase hive size
-increase tile size
+effecter
+
+remove common-effects from cards
