@@ -7,7 +7,11 @@ local tableUtils = require("utils.tableUtils")
 
 local hexagons = require("lib.hexagons")
 
+local targetSelector = require("lib.targetSelector")
+
 local _player = require("lib.player")
+
+local _tileMenu = require("lib.tileMenu")
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -25,6 +29,8 @@ local board = {}
 
 --contains gui elements behind board
 local lower_gui
+
+
 --contains timer behind board
 local timerGroup
 
@@ -40,6 +46,14 @@ local player1_deckTiles
 local player2_deckTiles
 local player1_handTiles
 local player2_handTiles
+
+--contains gui elements over board
+local upper_gui
+
+--graphic: modal Tile menu
+local tileMenu
+--keeps track if tileMenu is on screen
+local isTileMenuShown = nil
 
 local player1, player2
 
@@ -123,44 +137,60 @@ local function rearrangePlayerHand(player)
 	end
 end
 
-local function showTileOptions(tile)
-	if (holding) then
-		if tile then
-		    print(tile.name)
-    	end
-		print("menu")
-	else
-		print("hold cancelled")
+local function removeTileMenu()
+	print("close call")
+	if tileMenu then
+		upper_gui:remove(tileMenu)
+		tileMenu = nil
+		isTileMenuShown = nil
 	end
 end
 
---[[
-local function holdTile(event)
-  local phase = event.phase
-  local tile = event.target
-    if (phase=="began") then
-      holding = true
-      timer.performWithDelay( 1000, showTileOptions(tile), 1 )
-      -- Store initial offset position
-      tile.touchStartX = event.x
-      tile.touchStartY = event.y
+local function showTileMenu(event)
+  	local tile = event.target
+		if tile and not isTileMenuShown then
+			isTileMenuShown = true
+		    print(tile.name)
+		    tileMenu = _tileMenu.new(tile)
+		    tileMenu.close:addEventListener("tap", removeTileMenu)
+		    upper_gui:insert(tileMenu)
 
-    elseif (phase=="moved") and holding then
-      -- Move the tile to the new touch position, cancel if turn ends
-      --cancel hold if moving too much
-      	if (tile) then
-	      if (math.abs(tile.touchStartX - tile.x) > 10 or math.abs(tile.touchStartY - tile.y) > 10) then
-	      	holding = nil
-	      	print("held nil")
-	  	  end
-  		end
-    elseif (phase=="ended" or phase=="cancelled") then
-       --display.currentStage:setFocus( nil )
-    end
+		    --targetSelector test
+			print(who_plays)
+		    print("---------------TEST SELECTOR randomAround")
+		    local testTargets = targetSelector.getTargets(board, tile.slot, "randomAround", {player=who_plays.name, owner="enemy"})
+		    if (testTargets) then
+		    	print( "targets number --> "..#testTargets )
+			    for i, v in ipairs(testTargets) do
+			    	print("target "..i.." --> "..board[v].name)
+			    end
+			end
+		    print("---------------END TEST")
+
+		    print("---------------TEST SELECTOR AllAround")
+		    local testTargets = targetSelector.getTargets(board, tile.slot, "allAround")
+		    if (testTargets) then
+		    	print( "targets number --> "..#testTargets )
+			    for i, v in ipairs(testTargets) do
+			    	print("target "..i.." --> "..board[v].name)
+			    end
+		    end
+		    print("---------------END TEST")
+
+		    print("---------------TEST SELECTOR self")
+		    local testTargets = targetSelector.getTargets(board, tile.slot, "self")
+		    if (testTargets) then
+		    	print( "targets number --> "..#testTargets )
+			    for i, v in ipairs(testTargets) do
+			    	print("target "..i.." --> "..board[v].name)
+			    end
+		    end
+		    print("---------------END TEST")
+    	end
+		print("menu open")
   return true
 
 end
-]]--
 
 local function dragTile(event)
   local phase = event.phase
@@ -239,7 +269,7 @@ local function renderPlayerDeck(player)
 		deck = player2.deck
 		graphicDeck = player2_deckTiles
 	end
-	print(graphicDeck.deckY)
+	--print(graphicDeck.deckY)
 	for i,v in ipairs(deck) do
 		if v then
 			v.x = display.contentWidth + 200
@@ -248,7 +278,7 @@ local function renderPlayerDeck(player)
 	  		--v.barY = v.y
 	  		v:scale(1.08,1.08)
 	  		v:addEventListener( "touch", dragTile )
-	  		--v:addEventListener( "touch", holdTile )
+	  		v:addEventListener( "tap", showTileMenu )
 			graphicDeck:insert(v)
 		end
 	end
@@ -284,6 +314,9 @@ local function gameLoop()
 end
 
 function nextTurn()
+	--remove modal menu if shown
+	removeTileMenu()
+	--
 	turn = turn + 1
 	local nextPlayer
 	if (turn % 2 ~= 0) then
@@ -376,6 +409,10 @@ function scene:create( event )
 	sceneGroup:insert( player1_handTiles )
 	player2_handTiles = display.newGroup( )
 	sceneGroup:insert( player2_handTiles )
+
+	--contains gui elements over board
+	upper_gui = display.newGroup( )
+	sceneGroup:insert( upper_gui )
 
 	local hive = display.newImage( bg, "resources/images/hive.png" , 640, 694 )
 	hive.x = display.contentCenterX

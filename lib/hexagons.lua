@@ -82,6 +82,7 @@ table.insert(hexagons,hex)
 
 
 function hexagons:getSingleNode(hex,node)
+	--gets node by node number (1-6)
 	return self[hex].nodes[node]
 end
 
